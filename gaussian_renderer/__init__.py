@@ -11,6 +11,9 @@
 
 import torch
 import math
+# import os
+# import sys
+# sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'submodules/diff-surfel-rasterization'))
 from diff_surfel_rasterization import GaussianRasterizationSettings, GaussianRasterizer
 from scene.gaussian_model import GaussianModel
 from utils.sh_utils import eval_sh
@@ -31,14 +34,14 @@ def render(viewpoint_camera, pc : GaussianModel, pipe, bg_color : torch.Tensor, 
         pass
 
     # Set up rasterization configuration
-    tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
-    tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
+    # tanfovx = math.tan(viewpoint_camera.FoVx * 0.5)
+    # tanfovy = math.tan(viewpoint_camera.FoVy * 0.5)
+    intrinsic = torch.tensor(viewpoint_camera.intrinsic).float().cuda()
 
     raster_settings = GaussianRasterizationSettings(
         image_height=int(viewpoint_camera.image_height),
         image_width=int(viewpoint_camera.image_width),
-        tanfovx=tanfovx,
-        tanfovy=tanfovy,
+        intrinsic=intrinsic,
         bg=bg_color,
         scale_modifier=scaling_modifier,
         viewmatrix=viewpoint_camera.world_view_transform,
