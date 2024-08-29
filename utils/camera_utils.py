@@ -14,13 +14,21 @@ import numpy as np
 from utils.general_utils import PILtoTorch
 from utils.graphics_utils import fov2focal
 
+MYRESOLUTION = 1
+
 WARNED = False
 
 def loadCam(args, id, cam_info, resolution_scale):
     orig_w, orig_h = cam_info.image.size
+    new_intrinsic = cam_info.intrinsic
 
-    if args.resolution in [1, 2, 4, 8]:
+    if MYRESOLUTION != -1:
+        resolution = (int(orig_w / MYRESOLUTION), int(orig_h / MYRESOLUTION))
+        new_intrinsic /= MYRESOLUTION
+        print(f"Resolution: {resolution}")
+    elif args.resolution in [1, 2, 4, 8]:
         resolution = round(orig_w/(resolution_scale * args.resolution)), round(orig_h/(resolution_scale * args.resolution))
+        new_intrinsic /= (resolution_scale * args.resolution)
     else:  # should be a type that converts to float
         if args.resolution == -1:
             if orig_w > 1600:
@@ -37,6 +45,7 @@ def loadCam(args, id, cam_info, resolution_scale):
 
         scale = float(global_down) * float(resolution_scale)
         resolution = (int(orig_w / scale), int(orig_h / scale))
+        new_intrinsic /= scale
 
     if len(cam_info.image.split()) > 3:
         import torch
@@ -49,7 +58,7 @@ def loadCam(args, id, cam_info, resolution_scale):
         gt_image = resized_image_rgb
 
     return Camera(colmap_id=cam_info.uid, R=cam_info.R, T=cam_info.T, 
-                  FoVx=cam_info.FovX, FoVy=cam_info.FovY, 
+                  intrinsic=new_intrinsic, 
                   image=gt_image, gt_alpha_mask=loaded_mask,
                   image_name=cam_info.image_name, uid=id, data_device=args.data_device)
 
@@ -78,7 +87,5 @@ def camera_to_JSON(id, camera : Camera):
         'height' : camera.height,
         'position': pos.tolist(),
         'rotation': serializable_array_2d,
-        'fy' : fov2focal(camera.FovY, camera.height),
-        'fx' : fov2focal(camera.FovX, camera.width)
     }
     return camera_entry

@@ -48,26 +48,28 @@ def getWorld2View2(R, t, translate=np.array([.0, .0, .0]), scale=1.0):
     Rt = np.linalg.inv(C2W)
     return np.float32(Rt)
 
-def getProjectionMatrix(znear, zfar, fovX, fovY):
-    tanHalfFovY = math.tan((fovY / 2))
-    tanHalfFovX = math.tan((fovX / 2))
+def getProjectionMatrix(znear, zfar, intrinsic, W, H):
+    cx = intrinsic[0, 2]
+    cy = intrinsic[1, 2]
+    fx = intrinsic[0, 0]
+    fy = intrinsic[1, 1]
+    print(fx, fy, cx, cy)
 
-    top = tanHalfFovY * znear
-    bottom = -top
-    right = tanHalfFovX * znear
-    left = -right
+    assert(intrinsic[0, 1] == 0, "Intrinsic matrix error: No skew allowed")
 
     P = torch.zeros(4, 4)
 
-    z_sign = 1.0
 
-    P[0, 0] = 2.0 * znear / (right - left)
-    P[1, 1] = 2.0 * znear / (top - bottom)
-    P[0, 2] = (right + left) / (right - left)
-    P[1, 2] = (top + bottom) / (top - bottom)
+    # now we use right handed coordinate system in views.json!!!
+    z_sign = 1.0 
+
+    P[0, 0] = 2.0 * fx / W
+    P[1, 1] = 2.0 * fy / H
+    P[0, 2] = 2.0 * (cx / W) - 1.0
+    P[1, 2] = 2.0 * (cy / H) - 1.0
     P[3, 2] = z_sign
-    P[2, 2] = z_sign * zfar / (zfar - znear)
-    P[2, 3] = -(zfar * znear) / (zfar - znear)
+    P[2, 2] = z_sign * (zfar + znear) / (zfar - znear)
+    P[2, 3] = z_sign * (2 * zfar * znear) / (zfar - znear)
     return P
 
 def fov2focal(fov, pixels):
