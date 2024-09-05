@@ -3,6 +3,8 @@
 output
 build
 data
+submodules/simple-knn/build
+submodules/simple-knn/simple_knn.egg-info
 *.ply
 **/PKG-INFO
 # submodules
